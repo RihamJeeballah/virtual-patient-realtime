@@ -1,4 +1,4 @@
-# Blocked Nose – “Can’t Breathe Through My Nose”
+# Blocked Nose 
 
 ## Opening Stem
 Wisam is a woman with 28-year-old complains of nasal blockage and sneezing on most days for 9 months.

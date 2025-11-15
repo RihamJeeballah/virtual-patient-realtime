@@ -1,4 +1,4 @@
-# Double Vision – “Two of everything when I’m tired”
+# Double Vision 
 
 
 ## Patient Header

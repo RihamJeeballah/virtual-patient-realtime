@@ -1,4 +1,4 @@
-# Neck Lump – “The Painless Swelling”
+# Neck Lump
 
 ## Opening Stem
 Ahmed is a man with 55-year-old  reports a painless left-sided neck lump for 6 weeks.

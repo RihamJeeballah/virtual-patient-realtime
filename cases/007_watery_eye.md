@@ -1,4 +1,4 @@
-# Watery Eye – “My eyes won’t stop tearing”
+# Watery Eye
 
 
 ## Patient Header
