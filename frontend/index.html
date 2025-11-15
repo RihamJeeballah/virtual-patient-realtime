@@ -21,18 +21,10 @@
   </div>
 
   <div class="toolbar">
-    <label>Language:
-      <select id="language">
-        <option value="English">English - الإنجليزية</option>
-        <option value="Arabic">Arabic - العربية</option>
-      </select>
-    </label>
-    <label>Voice:
-      <select id="voice">
-        <option value="verse">verse (neutral)</option>
-        <option value="alloy">alloy (alt)</option>
-      </select>
-    </label>
+    <div class="toggle-group" id="languageToggle">
+      <button class="toggle-btn active" data-lang="English">English</button>
+      <button class="toggle-btn" data-lang="Arabic">العربية</button>
+    </div>
   </div>
 
   <main id="caseSelectView" class="page">
