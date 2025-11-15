@@ -39,22 +39,20 @@ for proxy_var in [
     if proxy_var in os.environ:
         del os.environ[proxy_var]
 
-# ---------------------------------------------------------
-# Disable httpx trust in proxy environment variables
-# ---------------------------------------------------------
+# Disable proxy forwarding
 http_client = httpx.Client(trust_env=False)
 
 # ---------------------------------------------------------
-# Import instructions builder
+# Import instructions builder (updated prompt)
 # ---------------------------------------------------------
 from backend.instructions import build_patient_instructions
 
 # ---------------------------------------------------------
-# OpenAI Client (FINAL FIXED VERSION)
+# OpenAI Client
 # ---------------------------------------------------------
 client = OpenAI(
     api_key=OPENAI_API_KEY,
-    http_client=http_client     # <-- disables proxy loading
+    http_client=http_client
 )
 
 MODEL_REALTIME = os.getenv("MODEL_REALTIME", "gpt-4o-realtime-preview-2024-10-01")
@@ -76,11 +74,10 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------
-# Static file serving
+# Static files
 # ---------------------------------------------------------
 app.mount("/app", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="app")
 app.mount("/app/avatars", StaticFiles(directory=str(FRONTEND_DIR / "avatars")), name="avatars")
-
 
 @app.get("/app/avatars.json")
 def get_avatar_map():
@@ -91,7 +88,7 @@ def get_avatar_map():
         return json.load(f)
 
 # ---------------------------------------------------------
-# Case Processing Utilities
+# Case loading
 # ---------------------------------------------------------
 def parse_case_md(md_text: str) -> Dict[str, str]:
     sections = re.split(r"^##\s+", md_text, flags=re.MULTILINE)
@@ -103,7 +100,6 @@ def parse_case_md(md_text: str) -> Dict[str, str]:
         case[header] = body
     return case
 
-
 def load_all_cases():
     cases = {}
     for p in sorted(CASES_DIR.glob("*.md")):
@@ -111,7 +107,6 @@ def load_all_cases():
             case = parse_case_md(f.read())
         cases[p.stem] = case
     return cases
-
 
 CASE_CACHE = load_all_cases()
 
@@ -123,11 +118,9 @@ class SessionRequest(BaseModel):
     language: str = "English"
     voice: Optional[str] = None
 
-
 class ChatTurn(BaseModel):
     role: str
     content: str
-
 
 class TextReplyRequest(BaseModel):
     case_id: str
@@ -142,11 +135,9 @@ class TextReplyRequest(BaseModel):
 def root():
     return HTMLResponse('<meta http-equiv="refresh" content="0; url=/app/index.html" />')
 
-
 @app.get("/api/cases")
 def list_cases():
     return [{"id": cid, "title": c["title"]} for cid, c in CASE_CACHE.items()]
-
 
 @app.get("/api/cases/{case_id}")
 def get_case(case_id: str):
@@ -155,9 +146,8 @@ def get_case(case_id: str):
         raise HTTPException(404, "Case not found")
     return case
 
-
 # ---------------------------------------------------------
-# Create realtime session
+# Create realtime session (uses new prompt)
 # ---------------------------------------------------------
 @app.post("/api/session")
 def create_session(req: SessionRequest):
@@ -165,6 +155,7 @@ def create_session(req: SessionRequest):
     if not case:
         raise HTTPException(404, "Case not found")
 
+    # Build full clinical-style prompt (updated)
     instructions = build_patient_instructions(case, req.language)
     voice = req.voice or DEFAULT_TTS_VOICE
 
@@ -176,13 +167,11 @@ def create_session(req: SessionRequest):
             instructions=instructions,
         )
         return JSONResponse(resp.model_dump())
-
     except Exception as e:
         raise HTTPException(500, f"Failed to create session: {e}")
 
-
 # ---------------------------------------------------------
-# Generate text + TTS audio
+# Text reply (updated prompt logic, NO Hello doctor)
 # ---------------------------------------------------------
 @app.post("/api/text_reply")
 def text_reply(req: TextReplyRequest):
@@ -190,27 +179,8 @@ def text_reply(req: TextReplyRequest):
     if not case:
         raise HTTPException(404, "Case not found")
 
-    lang_rule = (
-        "You must respond ONLY in English."
-        if req.language == "English"
-        else "يجب عليك الرد باللغة العربية فقط."
-    )
-
-    system_prompt = f"""
-You are a real patient in a medical encounter.
-{lang_rule}
-
-Rules:
-- Always respond as the patient
-- Short replies (1–2 sentences)
-- Emotional but realistic
-- Reveal symptoms gradually
-- Never reveal diagnosis
-- Use only information from the case
-
-Case:
-{json.dumps(case, ensure_ascii=False, indent=2)}
-""".strip()
+    # Use the SAME Streamlit-style patient instructions
+    system_prompt = build_patient_instructions(case, req.language)
 
     messages = [{"role": "system", "content": system_prompt}]
     for turn in req.history[-20:]:
@@ -229,7 +199,7 @@ Case:
     except Exception as e:
         raise HTTPException(500, f"LLM error: {e}")
 
-    # Choose TTS voice
+    # TTS voice
     voice = "alloy" if req.gender.lower() == "female" else "verse"
 
     # Generate audio
@@ -241,7 +211,6 @@ Case:
         )
         audio_bytes = audio.read()
         audio_b64 = base64.b64encode(audio_bytes).decode()
-
     except Exception:
         audio_b64 = None
 
