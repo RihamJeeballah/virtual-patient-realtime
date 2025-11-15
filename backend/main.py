@@ -24,14 +24,14 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 CASES_DIR = BASE_DIR / "cases"
 FRONTEND_DIR = BASE_DIR / "frontend"
-# Disable proxies for OpenAI (fix Railway automatic proxy injection)
-for var in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"]:
-    if var in os.environ:
-        del os.environ[var]
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise RuntimeError("ERROR: OPENAI_API_KEY not set in Railway Variables.")
+# Disable proxies for OpenAI (fix Railway automatic proxy injection)
+for var in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"]:
+    if var in os.environ:
+        del os.environ[var]
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
