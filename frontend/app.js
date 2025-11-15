@@ -1,6 +1,5 @@
 // ============================
-// Final app.js with dual-language speech recognition,
-// real-time transcription, text mode, voice mode, and transcript.
+// Final app.js – Auto Arabic/English Voice Recognition
 // ============================
 
 const $ = (q) => document.querySelector(q);
@@ -15,9 +14,6 @@ const modeTextBtn = $("#modeText");
 const modeVoiceBtn = $("#modeVoice");
 const micBtn = $("#micBtn");
 
-// ========================================================
-// STATE
-// ========================================================
 let selectedCase = null;
 let selectedAvatar = null;
 let mode = "text";
@@ -25,9 +21,7 @@ let history = [];
 let recognition = null;
 let isRecording = false;
 
-// ========================================================
-// Avatar mapping (unchanged)
-// ========================================================
+// Avatar Map unchanged
 const avatarMap = {
   "001_ear_pain": "Ear_pain_sarah_female.png",
   "002_neck_lump": "neck_lump_Ahmed_male.png",
@@ -40,7 +34,17 @@ const avatarMap = {
 };
 
 // ========================================================
-// Add chat bubbles
+// Language Detection Function
+// ========================================================
+
+function detectLanguage(text) {
+  const hasArabic = /[\u0600-\u06FF]/.test(text);
+  if (hasArabic) return "ar-SA";
+  return "en-US";
+}
+
+// ========================================================
+// Add Bubble
 // ========================================================
 function addBubble(role, text, audioB64 = null) {
   const row = document.createElement("div");
@@ -70,7 +74,7 @@ function addBubble(role, text, audioB64 = null) {
     const audio = document.createElement("audio");
     audio.controls = true;
     audio.autoplay = true;
-    audio.src = `data:audio/mp3;base64,${audioB64}`;
+    audio.src = `data:audio/mp3;base64,${audio_b64}`;
     bubble.appendChild(audio);
   }
 
@@ -81,7 +85,7 @@ function addBubble(role, text, audioB64 = null) {
 }
 
 // ========================================================
-// API helper
+// Fetch JSON
 // ========================================================
 async function fetchJSON(url, opts = {}) {
   const r = await fetch(url, opts);
@@ -89,13 +93,12 @@ async function fetchJSON(url, opts = {}) {
 }
 
 // ========================================================
-// Load cases
+// Load Cases
 // ========================================================
 async function loadCases() {
   const cards = $("#cards");
   cards.innerHTML = "";
   const cases = await fetchJSON("/api/cases");
-
   cases.forEach((c) => {
     const avatar = avatarMap[c.id] || "default.png";
     const div = document.createElement("div");
@@ -112,7 +115,7 @@ async function loadCases() {
 loadCases();
 
 // ========================================================
-// Open chat page
+// Open Chat Page
 // ========================================================
 function openChatPage() {
   $("#bigAvatar").src = "./avatars/" + selectedAvatar;
@@ -133,7 +136,7 @@ function openChatPage() {
 }
 
 // ========================================================
-// Text sending logic
+// Send Text Message
 // ========================================================
 async function sendMessage(msg) {
   userInput.value = "";
@@ -157,39 +160,23 @@ async function sendMessage(msg) {
   addBubble("assistant", res.reply, res.audio_b64);
 }
 
-sendBtn.onclick = () => {
-  const msg = userInput.value.trim();
-  if (msg) sendMessage(msg);
-};
-
-userInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") sendBtn.click();
-});
-
 // ========================================================
-// Voice Mode — Real-time bilingual transcription
+// Voice Recognition with Auto-Language Switching
 // ========================================================
 function startSpeechRecognition() {
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    alert("Your browser does not support voice recognition.");
+    alert("Your browser does not support speech recognition.");
     return;
   }
 
   recognition = new SpeechRecognition();
-
-  // AUTO detect language based on selected UI language
-  const lang = $("#language").value;
-  if (lang === "Arabic") {
-    recognition.lang = "ar-SA";  // Arabic
-  } else {
-    recognition.lang = "en-US";  // English
-  }
-
+  recognition.lang = "ar-SA"; // default Arabic
   recognition.interimResults = true;
   recognition.continuous = false;
+
   userInput.value = "";
 
   recognition.onstart = () => {
@@ -205,11 +192,16 @@ function startSpeechRecognition() {
       transcript += event.results[i][0].transcript;
     }
     userInput.value = transcript;
-  };
 
-  recognition.onerror = (event) => {
-    console.log("Speech recognition error:", event.error);
-    stopRecording();
+    // Language auto-detection
+    const detected = detectLanguage(transcript);
+    if (detected !== recognition.lang) {
+      recognition.stop();
+      setTimeout(() => {
+        recognition.lang = detected;
+        recognition.start();
+      }, 150);
+    }
   };
 
   recognition.onend = () => {
@@ -222,40 +214,36 @@ function startSpeechRecognition() {
 }
 
 function stopRecording() {
-  if (isRecording) {
-    isRecording = false;
-    micBtn.classList.remove("recording");
-    micBtn.textContent = "🎤";
-    userInput.placeholder = "Type your message…";
-  }
+  isRecording = false;
+  micBtn.classList.remove("recording");
+  micBtn.textContent = "🎤";
+  userInput.placeholder = "Type your message…";
 }
 
 micBtn.onclick = () => {
   if (!isRecording) startSpeechRecognition();
-  else if (recognition) recognition.stop();
+  else recognition.stop();
 };
 
 // ========================================================
-// Mode toggle (show/hide mic)
+// Mode Toggle
 // ========================================================
 modeTextBtn.onclick = () => {
-  setMode("text");
+  mode = "text";
   micBtn.classList.add("hidden");
+  modeTextBtn.classList.add("active");
+  modeVoiceBtn.classList.remove("active");
 };
 
 modeVoiceBtn.onclick = () => {
-  setMode("voice");
+  mode = "voice";
   micBtn.classList.remove("hidden");
+  modeVoiceBtn.classList.add("active");
+  modeTextBtn.classList.remove("active");
 };
 
-function setMode(m) {
-  mode = m;
-  modeTextBtn.classList.toggle("active", m === "text");
-  modeVoiceBtn.classList.toggle("active", m === "voice");
-}
-
 // ========================================================
-// Back button
+// Back
 // ========================================================
 globalBackBtn.onclick = () => {
   chatView.classList.add("hidden");
@@ -271,7 +259,7 @@ globalBackBtn.onclick = () => {
 };
 
 // ========================================================
-// End encounter: transcript download
+// End Encounter
 // ========================================================
 endEncounterBtn.onclick = () => {
   const lines = history.map((h) => {
