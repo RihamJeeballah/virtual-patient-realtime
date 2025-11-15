@@ -5,3 +5,4 @@ __pycache__/
 node_modules/
 backend/.env
 *.env
+# Temporary update to trigger Git
