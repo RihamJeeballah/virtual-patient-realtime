@@ -130,12 +130,6 @@ function openChatPage() {
   caseSelectView.classList.add("hidden");
   chatView.classList.remove("hidden");
   globalBackBtn.classList.remove("hidden");
-
-  addBubble("assistant", "Hello doctor, I am your patient for this case.");
-  history.push({
-    role: "assistant",
-    content: "Hello doctor, I am your patient for this case.",
-  });
 }
 
 // ============================
