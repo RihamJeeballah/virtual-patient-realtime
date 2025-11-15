@@ -225,3 +225,21 @@ body {
 .hidden {
   display: none !important;
 }
+/* Mic Button */
+#micBtn {
+  background: #F7941D;
+  border: none;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  font-size: 20px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#micBtn.recording {
+  background: red;
+}
