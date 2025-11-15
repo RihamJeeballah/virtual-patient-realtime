@@ -19,9 +19,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 CASES_DIR = BASE_DIR / "cases"
 FRONTEND_DIR = BASE_DIR / "frontend"
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise RuntimeError("Missing OPENAI_API_KEY in environment")
+import os
+from dotenv import load_dotenv
+
+if not os.getenv("RAILWAY_ENVIRONMENT"):
+    load_dotenv()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 MODEL_REALTIME = os.getenv("MODEL_REALTIME", "gpt-4o-realtime-preview-2024-10-01")
 DEFAULT_TTS_VOICE = os.getenv("DEFAULT_TTS_VOICE", "verse")
