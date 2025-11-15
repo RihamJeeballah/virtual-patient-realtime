@@ -1,3 +1,146 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #f6f7fa;
+  overflow-x: hidden;     /* 💥 STOP horizontal scrolling */
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 25px 40px;
+  color: white;
+  background: linear-gradient(90deg, #4B2E83, #F7941D);
+}
+
+.header-logo {
+  height: 90px;
+  background: white;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.toolbar {
+  padding: 15px 40px;
+  display: flex;
+  gap: 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #ddd;
+}
+
+.page {
+  padding: 25px 40px;
+}
+
+/* CASE GRID */
+.case-grid {
+  display: grid;
+  gap: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.card-item {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid #eee;
+  transition: 0.2s;
+}
+.card-item:hover {
+  transform: scale(1.03);
+}
+
+/* CHAT LAYOUT */
+.chat-wrapper {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap; /* ❤️ Responsive */
+}
+
+.patient-panel {
+  flex: 1 1 260px;
+  max-width: 320px;
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+}
+
+.patient-photo {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.chat-panel {
+  flex: 3 1 450px;
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 60vh;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* CHAT BUBBLES */
+.bubble-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bubble {
+  max-width: 80%;
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.bubble.doctor {
+  background: #eef1f6;
+}
+
+.bubble.patient {
+  background: #eaf8ee;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+/* INPUT */
+.input-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.voice-btn {
+  margin-top: 12px;
+  padding: 14px;
+  font-size: 18px;
+  border: none;
+  border-radius: 10px;
+  background: #4B2E83;
+  color: white;
+}
+
+.hidden {
+  display: none !important;
+}
 /* Base */
 body {
   margin: 0;
