@@ -141,7 +141,7 @@ async function sendMessage(msg) {
 
   const payload = {
     case_id: selectedCase.id,
-    language: $("#language").value,
+    language: detectLanguageStrong(msg) === "ar-SA" ? "Arabic" : "English",
     gender: "male",
     history,
   };
@@ -181,7 +181,7 @@ function detectLanguageStrong(text) {
   if (arCount > enCount) return "ar-SA";
   if (enCount > arCount) return "en-US";
 
-  return $("#language").value === "Arabic" ? "ar-SA" : "en-US";
+  return "en-US";
 }
 
 // ============================
@@ -229,7 +229,6 @@ function startSpeechRecognition() {
 
     userInput.value = transcript;
 
-    // 🚀 REAL-TIME language switching
     const detected = detectLanguageStrong(transcript);
 
     if (detected !== currentRecognitionLang) {
@@ -258,15 +257,11 @@ function stopRecording() {
   userInput.placeholder = "Type your message…";
 }
 
-// Mic click
 micBtn.onclick = () => {
   if (!isRecording) startSpeechRecognition();
   else if (recognition) recognition.stop();
 };
 
-// ============================
-// Mode toggle
-// ============================
 modeTextBtn.onclick = () => {
   mode = "text";
   micBtn.classList.add("hidden");
@@ -281,14 +276,8 @@ modeVoiceBtn.onclick = () => {
   modeTextBtn.classList.remove("active");
 };
 
-// ============================
-// Back button
-// ============================
 globalBackBtn.onclick = () => location.reload();
 
-// ============================
-// End Encounter
-// ============================
 endEncounterBtn.onclick = () => {
   const lines = history.map((h) => {
     const speaker = h.role === "user" ? "Doctor" : "Patient";
