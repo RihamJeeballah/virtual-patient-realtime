@@ -1,163 +1,280 @@
-const backendURL = "https://virtual-patient-realtime-production.up.railway.app";
+// Final app.js with text + voice modes
 
-let currentCase = null;
-let mode = "text"; // text | voice
+const $ = (q) => document.querySelector(q);
 
-// UTC+4 timestamp helper
-function muscatTimestamp() {
-  return new Date().toLocaleString("en-US", { timeZone: "Asia/Muscat" });
-}
+const caseSelectView = $("#caseSelectView");
+const chatView = $("#chatView");
+const globalBackBtn = $("#globalBackBtn");
+const endEncounterBtn = $("#endEncounterBtn");
+const chatBox = $("#chatBox");
+const userInput = $("#userInput");
+const sendBtn = $("#sendBtn");
+const modeTextBtn = $("#modeText");
+const modeVoiceBtn = $("#modeVoice");
+const voiceRecordBtn = $("#voiceRecordBtn");
 
-// Load case list
-async function loadCases() {
-  const res = await fetch("./cases.json");
-  const cases = await res.json();
-  const grid = document.getElementById("caseGrid");
+let selectedCase = null;
+let selectedAvatar = null;
+let mode = "text";
+let history = [];
 
-  grid.innerHTML = "";
-  cases.forEach(c => {
-    const item = document.createElement("div");
-    item.className = "card-item";
-    item.innerHTML = `
-      <img src="${c.avatar}" style="width:100%; border-radius:12px" />
-      <h3>${c.name}</h3>
-      <p>${c.title}</p>
-    `;
-    item.onclick = () => openCase(c);
-    grid.appendChild(item);
-  });
-}
+const DOCTOR_ICON = "👨‍⚕️";
 
-// Open case
-function openCase(c) {
-  currentCase = c;
-
-  document.getElementById("caseView").classList.add("hidden");
-  document.getElementById("chatView").classList.remove("hidden");
-  document.getElementById("backToCases").classList.remove("hidden");
-
-  document.getElementById("patientAvatar").src = c.avatar;
-  document.getElementById("patientName").innerText = c.name;
-  document.getElementById("patientCaseTitle").innerText = c.title;
-
-  clearChat();
-}
-
-// Back button
-document.getElementById("backToCases").onclick = () => {
-  document.getElementById("chatView").classList.add("hidden");
-  document.getElementById("caseView").classList.remove("hidden");
-  document.getElementById("backToCases").classList.add("hidden");
+// Map case id -> avatar file
+const avatarMap = {
+  "001_ear_pain": "Ear_pain_sarah_female.png",
+  "002_neck_lump": "neck_lump_Ahmed_male.png",
+  "003_blocked_nose": "blocked_nose_Wisam_female.png",
+  "004_red_eye": "red_eye_Mariam_female.png",
+  "005_blurred_vision": "blurred_vision_Salem_male.png",
+  "006_sudden_blurred_vision": "sudden_blurred_vision_Salma_female.png",
+  "007_watery_eye": "watery_eye_Aisha_female.png",
+  "008_double_vision": "double_vision_Nasser_male.png",
 };
 
-// ---- CHAT UI ----
-const chatBox = document.getElementById("chatBox");
-function clearChat() { chatBox.innerHTML = ""; }
-
-function addMessage(text, sender = "doctor") {
+function addBubble(role, text, audioB64 = null) {
   const row = document.createElement("div");
-  row.className = "bubble-row";
+  row.className =
+    "bubble-row " + (role === "user" ? "doctor-row" : "patient-row");
 
-  const bubble = document.createElement("div");
-  bubble.className = "bubble " + sender;
-  bubble.textContent = text;
-
-  const avatar = document.createElement("img");
+  const avatar = document.createElement("div");
   avatar.className = "avatar";
-  avatar.src = sender === "doctor" ? "./doctor.png" : "./patient.png";
 
-  if (sender === "doctor") {
-    row.appendChild(avatar);
-    row.appendChild(bubble);
+  if (role === "user") {
+    avatar.textContent = DOCTOR_ICON;
+    avatar.style.fontSize = "24px";
   } else {
-    row.appendChild(bubble);
-    row.appendChild(avatar);
+    const img = document.createElement("img");
+    img.src = "./avatars/" + selectedAvatar;
+    avatar.appendChild(img);
   }
 
+  const bubble = document.createElement("div");
+  bubble.className = "bubble " + (role === "user" ? "doctor" : "patient");
+  bubble.textContent = text;
+
+  if (audioB64) {
+    const audio = document.createElement("audio");
+    audio.controls = true;
+    audio.autoplay = true;
+    audio.src = `data:audio/mp3;base64,${audioB64}`;
+    bubble.appendChild(audio);
+  }
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
   chatBox.appendChild(row);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// ---- TEXT MODE ----
-document.getElementById("btnTextMode").onclick = () => {
-  mode = "text";
-  document.getElementById("btnTextMode").classList.add("active");
-  document.getElementById("btnVoiceMode").classList.remove("active");
-
-  document.getElementById("textInputRow").classList.remove("hidden");
-  document.getElementById("voiceRecordBtn").classList.add("hidden");
-
-  document.getElementById("textInput").disabled = false;
-  document.getElementById("sendTextBtn").disabled = false;
-};
-
-document.getElementById("sendTextBtn").onclick = async () => {
-  const msg = document.getElementById("textInput").value.trim();
-  if (!msg) return;
-
-  addMessage(msg, "doctor");
-  document.getElementById("textInput").value = "";
-
-  const response = await fetch(`${backendURL}/chat_text`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: msg,
-      case_name: currentCase.name,
-      language: document.getElementById("languageSelect").value
-    })
-  });
-
-  const data = await response.json();
-  addMessage(data.reply, "patient");
-};
-
-// ---- VOICE MODE ----
-document.getElementById("btnVoiceMode").onclick = () => {
-  mode = "voice";
-  document.getElementById("btnVoiceMode").classList.add("active");
-  document.getElementById("btnTextMode").classList.remove("active");
-
-  document.getElementById("textInputRow").classList.add("hidden");
-  document.getElementById("voiceRecordBtn").classList.remove("hidden");
-};
-
-let mediaRecorder;
-let audioChunks = [];
-
-const voiceBtn = document.getElementById("voiceRecordBtn");
-
-voiceBtn.onmousedown = async () => {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder = new MediaRecorder(stream);
-
-  audioChunks = [];
-  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-
-  mediaRecorder.onstop = sendVoiceToBackend;
-  mediaRecorder.start();
-};
-
-voiceBtn.onmouseup = () => {
-  mediaRecorder.stop();
-};
-
-// Send audio to backend
-async function sendVoiceToBackend() {
-  const blob = new Blob(audioChunks, { type: "audio/webm" });
-  const form = new FormData();
-  form.append("file", blob, "voice.webm");
-
-  addMessage("🎤 (Voice Sent)", "doctor");
-
-  const res = await fetch(`${backendURL}/chat_voice`, {
-    method: "POST",
-    body: form
-  });
-
-  const data = await res.json();
-  addMessage(data.reply, "patient");
+async function fetchJSON(url, opts = {}) {
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error("Request failed");
+  return await r.json();
 }
 
-// Load cases on start
+// Load cases from backend
+async function loadCases() {
+  const cards = $("#cards");
+  cards.innerHTML = "";
+  const cases = await fetchJSON("/api/cases");
+
+  cases.forEach((c) => {
+    const avatar = avatarMap[c.id] || "default.png";
+    const div = document.createElement("div");
+    div.className = "card-item";
+    div.innerHTML = `<img src="./avatars/${avatar}" /><div class="card-title">${c.title}</div>`;
+    div.onclick = () => {
+      selectedCase = c;
+      selectedAvatar = avatar;
+      openChatPage();
+    };
+    cards.appendChild(div);
+  });
+}
 loadCases();
+
+function openChatPage() {
+  $("#bigAvatar").src = "./avatars/" + selectedAvatar;
+  $("#patientName").textContent = selectedCase.title.split("–")[0];
+  $("#caseTitle").textContent = selectedCase.title;
+
+  chatBox.innerHTML = "";
+  history = [];
+  mode = "text";
+  setMode("text");
+
+  caseSelectView.classList.add("hidden");
+  chatView.classList.remove("hidden");
+  globalBackBtn.classList.remove("hidden");
+
+  userInput.disabled = false;
+  sendBtn.disabled = false;
+
+  const greeting = "Hello doctor, I am your patient for this case.";
+  addBubble("assistant", greeting);
+  history.push({ role: "assistant", content: greeting });
+}
+
+// -------- TEXT MODE --------
+sendBtn.onclick = async () => {
+  const msg = userInput.value.trim();
+  if (!msg || !selectedCase) return;
+
+  userInput.value = "";
+  addBubble("user", msg);
+  history.push({ role: "user", content: msg });
+
+  const payload = {
+    case_id: selectedCase.id,
+    language: $("#language").value,
+    gender: "male",
+    history,
+  };
+
+  const res = await fetchJSON("/api/text_reply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  history.push({ role: "assistant", content: res.reply });
+  addBubble("assistant", res.reply, res.audio_b64);
+};
+
+userInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendBtn.click();
+});
+
+// -------- MODE TOGGLE --------
+modeTextBtn.onclick = () => setMode("text");
+modeVoiceBtn.onclick = () => setMode("voice");
+
+function setMode(m) {
+  mode = m;
+  const isText = m === "text";
+
+  $("#inputRow").classList.toggle("hidden", !isText);
+  voiceRecordBtn.classList.toggle("hidden", isText);
+
+  modeTextBtn.classList.toggle("active", isText);
+  modeVoiceBtn.classList.toggle("active", !isText);
+}
+
+// -------- BACK TO CASES --------
+globalBackBtn.onclick = () => {
+  chatView.classList.add("hidden");
+  caseSelectView.classList.remove("hidden");
+  globalBackBtn.classList.add("hidden");
+  chatBox.innerHTML = "";
+  userInput.value = "";
+  userInput.disabled = true;
+  sendBtn.disabled = true;
+  selectedCase = null;
+  selectedAvatar = null;
+  history = [];
+};
+
+// -------- END ENCOUNTER (Transcript download) --------
+endEncounterBtn.onclick = () => {
+  const lines = history.map((h) => {
+    const speaker = h.role === "user" ? "Doctor" : "Patient";
+    return `${speaker}: ${h.content}`;
+  });
+  const blob = new Blob([lines.join("\n\n")], { type: "text/plain" });
+  const a = document.createElement("a");
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[:T]/g, "-").split(".")[0];
+  a.href = URL.createObjectURL(blob);
+  a.download = `encounter_${timestamp}.txt`;
+  a.click();
+  globalBackBtn.click();
+};
+
+// -------- VOICE MODE: Push-to-Talk --------
+let mediaRecorder = null;
+let audioChunks = [];
+
+async function startRecording() {
+  if (!selectedCase) return;
+  audioChunks = [];
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(audioChunks, { type: "audio/webm" });
+      await sendVoiceBlob(blob);
+      stream.getTracks().forEach((t) => t.stop());
+    };
+
+    mediaRecorder.start();
+    voiceRecordBtn.textContent = "🛑 Release to Stop";
+    voiceRecordBtn.style.backgroundColor = "#b32020";
+  } catch (err) {
+    console.error("Mic error", err);
+    alert("Microphone access denied or unavailable.");
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
+  voiceRecordBtn.textContent = "🎤 Hold to Talk";
+  voiceRecordBtn.style.backgroundColor = "#4B2E83";
+}
+
+voiceRecordBtn.addEventListener("mousedown", startRecording);
+voiceRecordBtn.addEventListener("mouseup", stopRecording);
+voiceRecordBtn.addEventListener("mouseleave", () => {
+  if (mediaRecorder && mediaRecorder.state === "recording") stopRecording();
+});
+voiceRecordBtn.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  startRecording();
+});
+voiceRecordBtn.addEventListener("touchend", (e) => {
+  e.preventDefault();
+  stopRecording();
+});
+
+async function sendVoiceBlob(blob) {
+  if (!selectedCase) return;
+
+  const form = new FormData();
+  form.append("audio", blob, "speech.webm");
+  form.append("case_id", selectedCase.id);
+  form.append("language", $("#language").value);
+  form.append("gender", "male");
+  form.append("history", JSON.stringify(history));
+
+  const res = await fetch("/api/voice_reply", {
+    method: "POST",
+    body: form,
+  });
+
+  if (!res.ok) {
+    console.error("Voice reply failed");
+    return;
+  }
+
+  const data = await res.json();
+
+  // Show the transcribed doctor question as a bubble
+  if (data.transcript) {
+    addBubble("user", data.transcript);
+    history.push({ role: "user", content: data.transcript });
+  }
+
+  // Show patient reply
+  if (data.reply) {
+    addBubble("assistant", data.reply, data.audio_b64);
+    history.push({ role: "assistant", content: data.reply });
+  }
+}
