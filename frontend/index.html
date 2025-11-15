@@ -3,83 +3,81 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Virtual Patient Realtime</title>
+  <title>Virtual Patient — Realtime</title>
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="./favicon.png" />
+  <link rel="icon" href="./favicon.png" />
 
   <link rel="stylesheet" href="./styles.css" />
 </head>
-
 <body>
 
-  <button id="backToCases" class="back-btn hidden">← Back to Cases</button>
+  <button id="globalBackBtn" class="global-back hidden">← Back to Cases</button>
 
-  <!-- HEADER -->
-  <div class="header">
-    <img src="./logo.png" class="header-logo" alt="SQU Logo" />
-    <div class="header-text">
-      <h1>Sultan Qaboos University</h1>
-      <h2>College of Medicine & Health Sciences</h2>
-      <h3>Clinical Skills Lab</h3>
+  <div class="header-banner">
+    <div class="header-content">
+      <img src="./logo.png" alt="Logo" />
+      <div class="header-text">
+        <h1>Sultan Qaboos University</h1>
+        <h2>College of Medicine and Health Sciences</h2>
+        <h3>Clinical Skills Lab</h3>
+      </div>
     </div>
   </div>
 
-  <!-- TOOLBAR -->
   <div class="toolbar">
     <label>Language:
-      <select id="languageSelect">
+      <select id="language">
         <option value="English">English</option>
         <option value="Arabic">Arabic</option>
       </select>
     </label>
 
     <label>Voice:
-      <select id="voiceSelect">
+      <select id="voice">
         <option value="verse">verse</option>
         <option value="alloy">alloy</option>
       </select>
     </label>
   </div>
 
-  <!-- CASE SELECTION VIEW -->
-  <main id="caseView" class="page">
+  <main id="caseSelectView" class="page">
     <h2 class="section-title">🩺 Select a Patient Case</h2>
-    <div id="caseGrid" class="case-grid"></div>
+    <div id="cards" class="case-grid"></div>
   </main>
 
-  <!-- CHAT VIEW -->
   <main id="chatView" class="page hidden">
-    <div class="chat-wrapper">
+    <div class="chat-container">
 
-      <!-- LEFT PANEL -->
+      <!-- Left panel -->
       <div class="patient-panel">
-        <img id="patientAvatar" class="patient-photo" />
+        <img id="bigAvatar" src="" alt="avatar" />
         <h2 id="patientName"></h2>
-        <p id="patientCaseTitle"></p>
+        <p id="caseTitle"></p>
       </div>
 
-      <!-- RIGHT PANEL -->
+      <!-- Right panel -->
       <div class="chat-panel">
 
-        <div class="top-controls">
-          <div class="mode-switch">
-            <button id="btnTextMode" class="mode-btn active">💬 Text</button>
-            <button id="btnVoiceMode" class="mode-btn">🎤 Voice</button>
+        <div class="controls">
+          <div class="mode-toggle">
+            <button id="modeText" class="mode-btn active">💬 Text</button>
+            <button id="modeVoice" class="mode-btn">🎤 Voice</button>
           </div>
-          <button id="endEncounterBtn" class="end-btn">End Encounter</button>
+          <button id="endEncounterBtn">End Encounter</button>
         </div>
 
         <div id="chatBox" class="chat-box"></div>
 
-        <!-- TEXT INPUT -->
-        <div id="textInputRow" class="input-row">
-          <input id="textInput" placeholder="Type a message…" disabled />
-          <button id="sendTextBtn" disabled>Send</button>
+        <div id="inputRow" class="input-row">
+          <input id="userInput" placeholder="Type your message…" disabled />
+          <button id="sendBtn" disabled>Send</button>
         </div>
 
-        <!-- VOICE INPUT -->
-        <button id="voiceRecordBtn" class="voice-btn hidden">🎤 Hold to Talk</button>
+        <!-- Push to talk -->
+        <button id="voiceRecordBtn" class="voice-record hidden">
+          🎤 Hold to Talk
+        </button>
 
       </div>
 
