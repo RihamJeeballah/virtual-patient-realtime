@@ -1,10 +1,13 @@
-<!-- Final index.html with layout fixes, audio playback, and end encounter -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Virtual Patient — Realtime</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="./favicon.png" />
+
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -64,6 +67,11 @@
           <input id="userInput" placeholder="Type your message…" disabled />
           <button id="sendBtn" disabled>Send</button>
         </div>
+
+        <!-- New push-to-talk button (voice mode) -->
+        <button id="voiceRecordBtn" class="voice-record hidden">
+          🎤 Hold to Talk
+        </button>
       </div>
     </div>
   </main>
