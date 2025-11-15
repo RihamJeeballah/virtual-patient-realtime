@@ -1,7 +1,6 @@
-// ============================
-// Final app.js with dual-language speech recognition,
-// real-time transcription, text mode, voice mode, and transcript.
-// ============================
+// ======================================================
+// FINAL BILINGUAL SPEECH RECOGNITION (AR + EN)
+// ======================================================
 
 const $ = (q) => document.querySelector(q);
 const caseSelectView = $("#caseSelectView");
@@ -15,19 +14,15 @@ const modeTextBtn = $("#modeText");
 const modeVoiceBtn = $("#modeVoice");
 const micBtn = $("#micBtn");
 
-// ========================================================
-// STATE
-// ========================================================
 let selectedCase = null;
 let selectedAvatar = null;
 let mode = "text";
 let history = [];
 let recognition = null;
 let isRecording = false;
+let currentLang = "en-US";   // default
 
-// ========================================================
-// Avatar mapping (unchanged)
-// ========================================================
+// Avatar map unchanged
 const avatarMap = {
   "001_ear_pain": "Ear_pain_sarah_female.png",
   "002_neck_lump": "neck_lump_Ahmed_male.png",
@@ -39,9 +34,30 @@ const avatarMap = {
   "008_double_vision": "double_vision_Nasser_male.png"
 };
 
-// ========================================================
-// Add chat bubbles
-// ========================================================
+// ======================================================
+// 1) Strong Language Detector
+// ======================================================
+function detectLanguageStrong(text) {
+  const hasArabic = /[\u0600-\u06FF]/.test(text);
+  const hasEnglish = /[A-Za-z]/.test(text);
+
+  if (hasArabic && !hasEnglish) return "ar-SA";
+  if (hasEnglish && !hasArabic) return "en-US";
+
+  // Mixed? pick based on majority
+  const arCount = (text.match(/[\u0600-\u06FF]/g) || []).length;
+  const enCount = (text.match(/[A-Za-z]/g) || []).length;
+
+  if (arCount > enCount) return "ar-SA";
+  if (enCount > arCount) return "en-US";
+
+  // fallback → UI selected language
+  return $("#language").value === "Arabic" ? "ar-SA" : "en-US";
+}
+
+// ======================================================
+// Add bubble function
+// ======================================================
 function addBubble(role, text, audioB64 = null) {
   const row = document.createElement("div");
   row.className = "bubble-row " + (role === "user" ? "doctor-row" : "patient-row");
@@ -80,61 +96,9 @@ function addBubble(role, text, audioB64 = null) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// ========================================================
-// API helper
-// ========================================================
-async function fetchJSON(url, opts = {}) {
-  const r = await fetch(url, opts);
-  return await r.json();
-}
-
-// ========================================================
-// Load cases
-// ========================================================
-async function loadCases() {
-  const cards = $("#cards");
-  cards.innerHTML = "";
-  const cases = await fetchJSON("/api/cases");
-
-  cases.forEach((c) => {
-    const avatar = avatarMap[c.id] || "default.png";
-    const div = document.createElement("div");
-    div.className = "card-item";
-    div.innerHTML = `<img src="./avatars/${avatar}" /><div class="card-title">${c.title}</div>`;
-    div.onclick = () => {
-      selectedCase = c;
-      selectedAvatar = avatar;
-      openChatPage();
-    };
-    cards.appendChild(div);
-  });
-}
-loadCases();
-
-// ========================================================
-// Open chat page
-// ========================================================
-function openChatPage() {
-  $("#bigAvatar").src = "./avatars/" + selectedAvatar;
-  $("#patientName").textContent = selectedCase.title.split("–")[0];
-  $("#caseTitle").textContent = selectedCase.title;
-
-  chatBox.innerHTML = "";
-  userInput.disabled = false;
-  sendBtn.disabled = false;
-  history = [];
-
-  caseSelectView.classList.add("hidden");
-  chatView.classList.remove("hidden");
-  globalBackBtn.classList.remove("hidden");
-
-  addBubble("assistant", "Hello doctor, I am your patient for this case.");
-  history.push({ role: "assistant", content: "Hello doctor, I am your patient for this case." });
-}
-
-// ========================================================
-// Text sending logic
-// ========================================================
+// ======================================================
+// Send message
+// ======================================================
 async function sendMessage(msg) {
   userInput.value = "";
   addBubble("user", msg);
@@ -157,40 +121,27 @@ async function sendMessage(msg) {
   addBubble("assistant", res.reply, res.audio_b64);
 }
 
-sendBtn.onclick = () => {
-  const msg = userInput.value.trim();
-  if (msg) sendMessage(msg);
-};
-
-userInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") sendBtn.click();
-});
-
-// ========================================================
-// Voice Mode — Real-time bilingual transcription
-// ========================================================
-function startSpeechRecognition() {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("Your browser does not support voice recognition.");
-    return;
+// ======================================================
+// 2) HARD restart SpeechRecognition to switch language
+// ======================================================
+function restartRecognition(newLang) {
+  if (recognition) {
+    try { recognition.stop(); } catch (e) {}
   }
 
-  recognition = new SpeechRecognition();
-
-  // AUTO detect language based on selected UI language
-  const lang = $("#language").value;
-  if (lang === "Arabic") {
-    recognition.lang = "ar-SA";  // Arabic
-  } else {
-    recognition.lang = "en-US";  // English
-  }
-
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = newLang;
   recognition.interimResults = true;
   recognition.continuous = false;
-  userInput.value = "";
+  currentLang = newLang;
+}
+
+// ======================================================
+// Voice Recording
+// ======================================================
+function startSpeech() {
+  restartRecognition(currentLang);
 
   recognition.onstart = () => {
     isRecording = true;
@@ -199,89 +150,79 @@ function startSpeechRecognition() {
     userInput.placeholder = "Listening…";
   };
 
-  recognition.onresult = (event) => {
+  recognition.onresult = (e) => {
     let transcript = "";
-    for (let i = 0; i < event.results.length; i++) {
-      transcript += event.results[i][0].transcript;
+    for (let i = 0; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
     }
-    userInput.value = transcript;
-  };
 
-  recognition.onerror = (event) => {
-    console.log("Speech recognition error:", event.error);
-    stopRecording();
+    userInput.value = transcript;
+
+    // Detect language dynamically
+    const detected = detectLanguageStrong(transcript);
+
+    if (detected !== currentLang) {
+      restartRecognition(detected);
+      setTimeout(() => recognition.start(), 150);
+    }
   };
 
   recognition.onend = () => {
-    stopRecording();
-    const text = userInput.value.trim();
-    if (text) sendMessage(text);
+    stopSpeech();
+    const finalText = userInput.value.trim();
+    if (finalText) sendMessage(finalText);
   };
 
   recognition.start();
 }
 
-function stopRecording() {
-  if (isRecording) {
-    isRecording = false;
-    micBtn.classList.remove("recording");
-    micBtn.textContent = "🎤";
-    userInput.placeholder = "Type your message…";
-  }
+function stopSpeech() {
+  isRecording = false;
+  micBtn.classList.remove("recording");
+  micBtn.textContent = "🎤";
+  userInput.placeholder = "Type your message…";
 }
 
+// mic click
 micBtn.onclick = () => {
-  if (!isRecording) startSpeechRecognition();
-  else if (recognition) recognition.stop();
+  if (!isRecording) startSpeech();
+  else recognition.stop();
 };
 
-// ========================================================
-// Mode toggle (show/hide mic)
-// ========================================================
+// ======================================================
+// Mode toggle
+// ======================================================
 modeTextBtn.onclick = () => {
-  setMode("text");
+  mode = "text";
   micBtn.classList.add("hidden");
+  modeTextBtn.classList.add("active");
+  modeVoiceBtn.classList.remove("active");
 };
 
 modeVoiceBtn.onclick = () => {
-  setMode("voice");
+  mode = "voice";
   micBtn.classList.remove("hidden");
+  modeVoiceBtn.classList.add("active");
+  modeTextBtn.classList.remove("active");
 };
 
-function setMode(m) {
-  mode = m;
-  modeTextBtn.classList.toggle("active", m === "text");
-  modeVoiceBtn.classList.toggle("active", m === "voice");
+// ======================================================
+// Helpers + Back + End Encounter (unchanged)
+// ======================================================
+async function fetchJSON(url, opts = {}) {
+  const r = await fetch(url, opts);
+  return await r.json();
 }
 
-// ========================================================
-// Back button
-// ========================================================
-globalBackBtn.onclick = () => {
-  chatView.classList.add("hidden");
-  caseSelectView.classList.remove("hidden");
-  globalBackBtn.classList.add("hidden");
-  chatBox.innerHTML = "";
-  userInput.value = "";
-  userInput.disabled = true;
-  sendBtn.disabled = true;
-  history = [];
-  selectedCase = null;
-  selectedAvatar = null;
-};
+globalBackBtn.onclick = () => location.reload();
 
-// ========================================================
-// End encounter: transcript download
-// ========================================================
 endEncounterBtn.onclick = () => {
-  const lines = history.map((h) => {
-    const speaker = h.role === "user" ? "Doctor" : "Patient";
-    return `${speaker}: ${h.content}`;
-  });
+  const lines = history.map(h =>
+    `${h.role === "user" ? "Doctor" : "Patient"}: ${h.content}`
+  );
 
   const blob = new Blob([lines.join("\n\n")], { type: "text/plain" });
   const a = document.createElement("a");
-
   const now = new Date();
   const muscatOffset = 4 * 60;
   const local = new Date(now.getTime() + muscatOffset * 60000);
@@ -290,6 +231,4 @@ endEncounterBtn.onclick = () => {
   a.href = URL.createObjectURL(blob);
   a.download = `encounter_${timestamp}.txt`;
   a.click();
-
-  globalBackBtn.click();
 };
