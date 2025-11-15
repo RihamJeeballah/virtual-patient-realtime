@@ -1,17 +1,13 @@
+<!-- Final index.html with layout fixes, audio playback, and end encounter -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Virtual Patient — Realtime</title>
-
-  <!-- Favicon -->
-  <link rel="icon" href="./favicon.png" />
-
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-
   <button id="globalBackBtn" class="global-back hidden">← Back to Cases</button>
 
   <div class="header-banner">
@@ -32,11 +28,10 @@
         <option value="Arabic">Arabic</option>
       </select>
     </label>
-
     <label>Voice:
       <select id="voice">
-        <option value="verse">verse</option>
-        <option value="alloy">alloy</option>
+        <option value="verse">verse (neutral)</option>
+        <option value="alloy">alloy (alt)</option>
       </select>
     </label>
   </div>
@@ -48,17 +43,13 @@
 
   <main id="chatView" class="page hidden">
     <div class="chat-container">
-
-      <!-- Left panel -->
       <div class="patient-panel">
         <img id="bigAvatar" src="" alt="avatar" />
         <h2 id="patientName"></h2>
         <p id="caseTitle"></p>
       </div>
 
-      <!-- Right panel -->
       <div class="chat-panel">
-
         <div class="controls">
           <div class="mode-toggle">
             <button id="modeText" class="mode-btn active">💬 Text</button>
@@ -73,14 +64,7 @@
           <input id="userInput" placeholder="Type your message…" disabled />
           <button id="sendBtn" disabled>Send</button>
         </div>
-
-        <!-- Push to talk -->
-        <button id="voiceRecordBtn" class="voice-record hidden">
-          🎤 Hold to Talk
-        </button>
-
       </div>
-
     </div>
   </main>
 
