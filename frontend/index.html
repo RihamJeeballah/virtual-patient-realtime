@@ -5,6 +5,168 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Virtual Patient — Realtime</title>
   <link rel="stylesheet" href="./styles.css" />
+  <style>
+    /* Responsive Fixes */
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f7f7f7;
+    }
+
+    .header-banner {
+      background: linear-gradient(to right, #4b2e83, #f7941d);
+      padding: 1rem;
+      color: white;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .header-content img {
+      height: 60px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 1rem;
+      background-color: white;
+      border-bottom: 1px solid #ddd;
+    }
+
+    main {
+      padding: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .case-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .chat-container {
+        flex-direction: row;
+      }
+    }
+
+    .patient-panel {
+      flex: 1;
+      text-align: center;
+    }
+
+    .patient-panel img {
+      width: 100%;
+      max-width: 300px;
+      height: auto;
+      border-radius: 16px;
+    }
+
+    .chat-panel {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      background-color: white;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .mode-toggle {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .mode-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: white;
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      background-color: #4b2e83;
+      color: white;
+    }
+
+    #chatBox {
+      flex: 1;
+      min-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .input-row input {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .input-row button {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      background-color: #4b2e83;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .global-back {
+      display: block;
+      margin: 1rem auto;
+      background-color: #4b2e83;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <button id="globalBackBtn" class="global-back hidden">← Back to Cases</button>
